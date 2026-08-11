@@ -30,7 +30,7 @@ SPOTIFY-CLONE/
 └── README.md
 ⚙️ Installation
 Clone the repository:
-git clone YOUR_GITHUB_REPOSITORY_URL
+git clone https://github.com/snehithabollam/SPOTIFY-CLONE.git
 Go to the project folder:
 cd SPOTIFY-CLONE
 Install dependencies:
