@@ -1,16 +1,43 @@
-# React + Vite
+# 🎵 Spotify Clone
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A responsive Spotify Clone built using React and Vite.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 🎵 Browse music
+- 🔍 Search songs
+- 🎧 Music player interface
+- ❤️ Like/favorite songs
+- 📱 Responsive design
+- 🎨 Spotify-inspired UI
 
-## React Compiler
+## 🛠️ Technologies Used
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React.js
+- Vite
+- JavaScript
+- HTML
+- CSS
 
-## Expanding the ESLint configuration
+## 📂 Project Structure
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```text
+SPOTIFY-CLONE/
+├── public/
+├── src/
+├── index.html
+├── package.json
+└── README.md
+⚙️ Installation
+Clone the repository:
+git clone YOUR_GITHUB_REPOSITORY_URL
+Go to the project folder:
+cd SPOTIFY-CLONE
+Install dependencies:
+npm install
+Run the project:
+npm run dev
+👩‍💻 Author
+Snehitha Bollam
+⭐ If you like this project
+Give this repository a ⭐ on GitHub!
