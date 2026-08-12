@@ -3,86 +3,157 @@ import { songsData } from "../assets/assets";
 
 export const PlayerContext = createContext();
 
+const RECENTLY_PLAYED_KEY = "spotify_recently_played";
+const MAX_RECENTLY_PLAYED = 10;
+
 const PlayerContextProvider = (props) => {
   const audioRef = useRef();
   const seekBg = useRef();
   const seekBar = useRef();
+  const shouldPlayRef = useRef(false);
   const [track, setTrack] = useState(songsData[0]);
   const [playStatus, setPlayStatus] = useState(false);
+  const [recentlyPlayed, setRecentlyPlayed] = useState(() => {
+    try {
+      const savedIds = JSON.parse(localStorage.getItem(RECENTLY_PLAYED_KEY) || "[]");
+      if (!Array.isArray(savedIds)) return [];
+      return savedIds
+        .map((id) => songsData.find((song) => song.id === Number(id)))
+        .filter(Boolean)
+        .slice(0, MAX_RECENTLY_PLAYED);
+    } catch {
+      return [];
+    }
+  });
   const [time, setTime] = useState({
     currentTime: { second: 0, minute: 0 },
     totalTime: { second: 0, minute: 0 }
   });
 
+  const addToRecentlyPlayed = (song) => {
+    if (!song) return;
+
+    setRecentlyPlayed((current) => {
+      const updated = [song, ...current.filter((item) => item.id !== song.id)]
+        .slice(0, MAX_RECENTLY_PLAYED);
+
+      localStorage.setItem(
+        RECENTLY_PLAYED_KEY,
+        JSON.stringify(updated.map((item) => item.id))
+      );
+
+      return updated;
+    });
+  };
+
   const play = () => {
-    audioRef.current.play();
+    if (!audioRef.current) return;
+    addToRecentlyPlayed(track);
+    audioRef.current.play().catch(() => {});
     setPlayStatus(true);
-  }
+  };
 
   const pause = () => {
-    audioRef.current.pause();
+    audioRef.current?.pause();
     setPlayStatus(false);
-  }
+  };
 
-  // Fixed: renamed from "playWidthId" to "playWithId" (typo)
-  // Fixed: setState is not async, can't await it — use a proper approach
-  const playWithId = async (id) => {
-    setTrack(songsData[id]);
-    // Audio src updates when track state changes, then we play
-    await audioRef.current.play();
+  const selectTrack = (song) => {
+    if (!song) return;
+    addToRecentlyPlayed(song);
+    shouldPlayRef.current = true;
+    setTrack(song);
     setPlayStatus(true);
-  }
+  };
 
-  const previous = async () => {
-    if (track.id > 0) {
-      setTrack(songsData[track.id - 1]);  // Fixed: removed incorrect await on setState
-      await audioRef.current.play();
-      setPlayStatus(true);
-    }
-  }
+  const playWithId = (id) => {
+    const song = songsData.find((item) => item.id === Number(id));
+    selectTrack(song);
+  };
 
-  const next = async () => {
-    if (track.id < songsData.length - 1) {
-      setTrack(songsData[track.id + 1]);  // Fixed: removed incorrect await on setState
-      await audioRef.current.play();
-      setPlayStatus(true);
-    }
-  }
+  const playRecentlyPlayed = (id) => {
+    const song = songsData.find((item) => item.id === Number(id));
+    selectTrack(song);
+  };
 
-  const seekSong = (e) => {  // Fixed: removed unnecessary async
-    audioRef.current.currentTime = ((e.nativeEvent.offsetX / seekBg.current.offsetWidth) * audioRef.current.duration);
-  }
+  const previous = () => {
+    if (track.id > 0) selectTrack(songsData[track.id - 1]);
+  };
+
+  const next = () => {
+    if (track.id < songsData.length - 1) selectTrack(songsData[track.id + 1]);
+  };
+
+  const seekSong = (e) => {
+    if (!audioRef.current?.duration || !seekBg.current) return;
+    audioRef.current.currentTime =
+      (e.nativeEvent.offsetX / seekBg.current.offsetWidth) * audioRef.current.duration;
+  };
 
   useEffect(() => {
-    setTimeout(() => {
-      audioRef.current.ontimeupdate = () => {
-        seekBar.current.style.width = (Math.floor(audioRef.current.currentTime / audioRef.current.duration * 100)) + "%";
-        setTime({
-          currentTime: {
-            second: Math.floor(audioRef.current.currentTime % 60),
-            minute: Math.floor(audioRef.current.currentTime / 60)
-          },
-          totalTime: {
-            second: Math.floor(audioRef.current.duration % 60),
-            minute: Math.floor(audioRef.current.duration / 60)
-          }
-        });
+    if (!audioRef.current) return;
+
+    audioRef.current.load();
+
+    if (shouldPlayRef.current) {
+      audioRef.current.play().catch(() => {});
+      shouldPlayRef.current = false;
+    }
+  }, [track]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const updateTime = () => {
+      if (!Number.isFinite(audio.duration)) return;
+      if (seekBar.current) {
+        seekBar.current.style.width = `${Math.floor(
+          (audio.currentTime / audio.duration) * 100
+        )}%`;
       }
-    }, 1000);
-  }, [audioRef]);
+      setTime({
+        currentTime: {
+          second: Math.floor(audio.currentTime % 60),
+          minute: Math.floor(audio.currentTime / 60)
+        },
+        totalTime: {
+          second: Math.floor(audio.duration % 60),
+          minute: Math.floor(audio.duration / 60)
+        }
+      });
+    };
+
+    const handleEnded = () => setPlayStatus(false);
+    audio.addEventListener("timeupdate", updateTime);
+    audio.addEventListener("ended", handleEnded);
+
+    return () => {
+      audio.removeEventListener("timeupdate", updateTime);
+      audio.removeEventListener("ended", handleEnded);
+    };
+  }, []);
 
   const contextValue = {
     audioRef,
     seekBar,
     seekBg,
-    track, setTrack,
-    playStatus, setPlayStatus,
-    time, setTime,
-    play, pause,
-    playWithId,   // Fixed: was "playWidthId"
-    previous, next,
+    track,
+    setTrack,
+    playStatus,
+    setPlayStatus,
+    time,
+    setTime,
+    recentlyPlayed,
+    addToRecentlyPlayed,
+    play,
+    pause,
+    playWithId,
+    playRecentlyPlayed,
+    previous,
+    next,
     seekSong
-  }
+  };
 
   return (
     <PlayerContext.Provider value={contextValue}>
